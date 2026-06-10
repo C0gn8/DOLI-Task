@@ -2,7 +2,7 @@ DOLI: Deciding on Literary Imagery Task
 
 DOLI (Deciding on Literary Imagery Task) is a psycholinguistic instrument designed to investigate metaphor creation, semantic flexibility, and formal thought disorder through controlled linguistic stimuli. Originally developed as part of research into linguistic creativity and schizophrenia, the task provides a reproducible method for examining how participants combine sensory, concrete, and abstract concepts when creating novel metaphorical expressions.
 
-Development status: DOLI v3.1 is a proof-of-concept software implementation of the methodology described in Delgaram-Nejad et al. (2022). The software has not yet undergone formal validation against the original experimental implementation. Researchers intending to use DOLI for data collection should review the methodology paper and independently verify task behaviour, stimulus presentation, and output formats before deployment.
+Development status: DOLI v5.1 is the latest stable release. Errors affecting stimuli presentation found in the v3.1 prototype have been corrected. However, researchers are still encouraged to review the methodology paper and independently verify task behaviour, stimulus presentation, and output formats before deployment.
 
 The DOLI Task is based on the methodology described in A Tutorial on Norming Linguistic Stimuli for Clinical Populations and is intended for research use in psycholinguistics, clinical linguistics, psychology, psychiatry, and studies of formal thought disorder.
 
