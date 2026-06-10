@@ -1,0 +1,1387 @@
+# ==================================================
+# DOLI RECONSTRUCTION
+# Chunk 1
+# Imports, settings, randomisation, dataclass
+# ==================================================
+
+import streamlit as st
+from dataclasses import dataclass
+from pathlib import Path
+
+import csv
+import json
+import random
+import time
+
+
+# ==================================================
+# SETTINGS
+# ==================================================
+
+ISI_MS = 950
+
+WINDOW_TITLE = "DOLI Reconstruction"
+
+FONT_FAMILY = "Arial"
+
+PRIME_FONT_SIZE = 48
+RESPONSE_FONT_SIZE = 32
+INFO_FONT_SIZE = 24
+
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+
+BLOCK_FILE = DATA_DIR / "allocation_state.json"
+
+
+# ==================================================
+# BLOCK RANDOMISATION
+# ==================================================
+
+def get_block_assignment(
+    factor_name,
+    conditions
+):
+    """
+    Simple block randomisation.
+
+    Example:
+
+    get_block_assignment(
+        "pathway",
+        ["A", "B"]
+    )
+
+    Produces balanced assignments:
+
+    A A B B
+    shuffled
+    """
+
+    if BLOCK_FILE.exists():
+
+        with open(
+            BLOCK_FILE,
+            "r",
+            encoding="utf8"
+        ) as f:
+
+            state = json.load(f)
+
+    else:
+
+        state = {}
+
+    if (
+        factor_name not in state
+        or
+        len(state[factor_name]) == 0
+    ):
+
+        block = []
+
+        for condition in conditions:
+            block.extend([condition] * 2)
+
+        random.shuffle(block)
+
+        state[factor_name] = block
+
+    assignment = state[factor_name].pop()
+
+    with open(
+        BLOCK_FILE,
+        "w",
+        encoding="utf8"
+    ) as f:
+
+        json.dump(
+            state,
+            f,
+            indent=2
+        )
+
+    return assignment
+
+
+# ==================================================
+# TRIAL OBJECT
+# ==================================================
+
+@dataclass
+class Trial:
+
+    phase: str
+
+    prime: str
+
+    left: str
+    right: str
+
+    pathway: str
+
+    prime_type: str
+
+    noun_order: str
+
+
+# ==================================================
+# QUICK TEST
+# ==================================================
+
+if __name__ == "__main__":
+
+    print(
+        "Chunk 1 loaded successfully."
+    )
+# ==================================================
+# DOLI RECONSTRUCTION
+# Chunk 2
+# Tables 5, 6, 9, 10, 11, 12
+# ==================================================
+
+# --------------------------------------------------
+# TABLE 5
+# Concrete-first noun pairs
+# --------------------------------------------------
+
+CONCRETE_FIRST = [
+
+    ("edge", "opinion"),
+    ("edge", "attitude"),
+    ("edge", "consideration"),
+
+    ("sharpener", "opinion"),
+    ("sharpener", "attitude"),
+    ("sharpener", "consideration"),
+
+    ("boomerang", "opinion"),
+    ("boomerang", "attitude"),
+    ("boomerang", "consideration")
+]
+
+
+# --------------------------------------------------
+# TABLE 6
+# Abstract-first noun pairs
+# --------------------------------------------------
+
+ABSTRACT_FIRST = [
+
+    ("opinion", "edge"),
+    ("opinion", "sharpener"),
+    ("opinion", "boomerang"),
+
+    ("attitude", "edge"),
+    ("attitude", "sharpener"),
+    ("attitude", "boomerang"),
+
+    ("consideration", "edge"),
+    ("consideration", "sharpener"),
+    ("consideration", "boomerang")
+]
+
+
+# --------------------------------------------------
+# TABLE 9
+# Practice List A
+# --------------------------------------------------
+
+PRACTICE_A = [
+
+    ("aromatic", "sharpener", "edge"),
+    ("fragrant", "boomerang", "edge"),
+    ("smelly", "boomerang", "sharpener"),
+
+    ("sour", "sharpener", "edge"),
+    ("spicy", "boomerang", "edge"),
+    ("salty", "boomerang", "sharpener"),
+
+    ("visual", "sharpener", "edge"),
+    ("watchful", "boomerang", "edge"),
+    ("scanned", "boomerang", "sharpener"),
+
+    ("quiet", "sharpener", "edge"),
+    ("silent", "boomerang", "edge"),
+    ("deaf", "boomerang", "sharpener"),
+
+    ("rough", "sharpener", "edge"),
+    ("smoothed", "boomerang", "edge"),
+    ("stroked", "boomerang", "sharpener")
+]
+
+
+# --------------------------------------------------
+# TABLE 10
+# Practice List B
+# --------------------------------------------------
+
+PRACTICE_B = [
+
+    ("aromatic", "attitude", "opinion"),
+    ("fragrant", "consideration", "opinion"),
+    ("smelly", "consideration", "attitude"),
+
+    ("sour", "attitude", "opinion"),
+    ("spicy", "consideration", "opinion"),
+    ("salty", "consideration", "attitude"),
+
+    ("visual", "attitude", "opinion"),
+    ("watchful", "consideration", "opinion"),
+    ("scanned", "consideration", "attitude"),
+
+    ("quiet", "attitude", "opinion"),
+    ("silent", "consideration", "opinion"),
+    ("deaf", "consideration", "attitude"),
+
+    ("rough", "attitude", "opinion"),
+    ("smoothed", "consideration", "opinion"),
+    ("stroked", "consideration", "attitude")
+]
+
+
+# --------------------------------------------------
+# TABLE 11
+# Distractor List A
+# --------------------------------------------------
+
+DISTRACTOR_A = [
+
+    ("fragrant aromatic", "attitude", "opinion"),
+    ("smelly aromatic", "consideration", "opinion"),
+    ("smelly fragrant", "consideration", "attitude"),
+
+    ("spicy sour", "attitude", "opinion"),
+    ("salty sour", "consideration", "opinion"),
+    ("salty spicy", "consideration", "attitude"),
+
+    ("watchful visual", "attitude", "opinion"),
+    ("scanned visual", "consideration", "opinion"),
+    ("scanned watchful", "consideration", "attitude"),
+
+    ("silent quiet", "attitude", "opinion"),
+    ("deaf quiet", "consideration", "opinion"),
+    ("deaf silent", "consideration", "attitude"),
+
+    ("smoothed rough", "attitude", "opinion"),
+    ("stroked rough", "consideration", "opinion"),
+    ("stroked smoothed", "consideration", "attitude")
+]
+
+
+# --------------------------------------------------
+# TABLE 12
+# Distractor List B
+# --------------------------------------------------
+
+DISTRACTOR_B = [
+
+    ("aromatic fragrant", "sharpener", "edge"),
+    ("aromatic smelly", "boomerang", "edge"),
+    ("fragrant smelly", "boomerang", "sharpener"),
+
+    ("sour spicy", "sharpener", "edge"),
+    ("sour salty", "boomerang", "edge"),
+    ("spicy salty", "boomerang", "sharpener"),
+
+    ("visual watchful", "sharpener", "edge"),
+    ("visual scanned", "boomerang", "edge"),
+    ("watchful scanned", "boomerang", "sharpener"),
+
+    ("quiet silent", "sharpener", "edge"),
+    ("quiet deaf", "boomerang", "edge"),
+    ("silent deaf", "boomerang", "sharpener"),
+
+    ("rough smoothed", "sharpener", "edge"),
+    ("rough stroked", "boomerang", "edge"),
+    ("smoothed stroked", "boomerang", "sharpener")
+]
+
+
+# --------------------------------------------------
+# CHUNK 2 TEST
+# --------------------------------------------------
+
+if __name__ == "__main__":
+
+    print("Concrete pairs:", len(CONCRETE_FIRST))
+    print("Abstract pairs:", len(ABSTRACT_FIRST))
+
+    print("Practice A:", len(PRACTICE_A))
+    print("Practice B:", len(PRACTICE_B))
+
+    print("Distractor A:", len(DISTRACTOR_A))
+    print("Distractor B:", len(DISTRACTOR_B))
+# ==================================================
+# DOLI RECONSTRUCTION
+# Chunk 3
+# Tables 1, 2, 3, 4
+# ==================================================
+
+# --------------------------------------------------
+# TABLE 1
+# Sensory adjectives by modality
+# --------------------------------------------------
+
+SIGHT = [
+    "visual",
+    "watchful",
+    "scanned"
+]
+
+SOUND = [
+    "quiet",
+    "silent",
+    "deaf"
+]
+
+SMELL = [
+    "aromatic",
+    "fragrant",
+    "smelly"
+]
+
+TASTE = [
+    "sour",
+    "spicy",
+    "salty"
+]
+
+TOUCH = [
+    "rough",
+    "smoothed",
+    "stroked"
+]
+
+ALL_ADJECTIVES = (
+    SIGHT +
+    SOUND +
+    SMELL +
+    TASTE +
+    TOUCH
+)
+
+# --------------------------------------------------
+# TABLE 4
+# Nouns
+# --------------------------------------------------
+
+CONCRETE_NOUNS = [
+    "edge",
+    "sharpener",
+    "boomerang"
+]
+
+ABSTRACT_NOUNS = [
+    "opinion",
+    "attitude",
+    "consideration"
+]
+
+# --------------------------------------------------
+# TABLE 2
+# Preferred syntax primes
+# --------------------------------------------------
+
+PREFERRED = [
+
+    # smell-sight
+
+    "aromatic visual",
+    "aromatic watchful",
+    "aromatic scanned",
+
+    "fragrant visual",
+    "fragrant watchful",
+    "fragrant scanned",
+
+    "smelly visual",
+    "smelly watchful",
+    "smelly scanned",
+
+    # sound-sight
+
+    "quiet visual",
+    "quiet watchful",
+    "quiet scanned",
+
+    "silent visual",
+    "silent watchful",
+    "silent scanned",
+
+    "deaf visual",
+    "deaf watchful",
+    "deaf scanned",
+
+    # taste-sight
+
+    "sour visual",
+    "sour watchful",
+    "sour scanned",
+
+    "spicy visual",
+    "spicy watchful",
+    "spicy scanned",
+
+    "salty visual",
+    "salty watchful",
+    "salty scanned",
+
+    # touch-sight
+
+    "rough visual",
+    "rough watchful",
+    "rough scanned",
+
+    "smoothed visual",
+    "smoothed watchful",
+    "smoothed scanned",
+
+    "stroked visual",
+    "stroked watchful",
+    "stroked scanned",
+
+    # taste-smell
+
+    "sour aromatic",
+    "sour fragrant",
+    "sour smelly",
+
+    "spicy aromatic",
+    "spicy fragrant",
+    "spicy smelly",
+
+    "salty aromatic",
+    "salty fragrant",
+    "salty smelly",
+
+    # touch-smell
+
+    "rough aromatic",
+    "rough fragrant",
+    "rough smelly",
+
+    "smoothed aromatic",
+    "smoothed fragrant",
+    "smoothed smelly",
+
+    "stroked aromatic",
+    "stroked fragrant",
+    "stroked smelly",
+
+    # smell-sound
+
+    "aromatic quiet",
+    "aromatic silent",
+    "aromatic deaf",
+
+    "fragrant quiet",
+    "fragrant silent",
+    "fragrant deaf",
+
+    "smelly quiet",
+    "smelly silent",
+    "smelly deaf",
+
+    # taste-sound
+
+    "sour quiet",
+    "sour silent",
+    "sour deaf",
+
+    "spicy quiet",
+    "spicy silent",
+    "spicy deaf",
+
+    "salty quiet",
+    "salty silent",
+    "salty deaf",
+
+    # touch-sound
+
+    "rough quiet",
+    "rough silent",
+    "rough deaf",
+
+    "smoothed quiet",
+    "smoothed silent",
+    "smoothed deaf",
+
+    "stroked quiet",
+    "stroked silent",
+    "stroked deaf",
+
+    # touch-taste
+
+    "rough sour",
+    "rough spicy",
+    "rough salty",
+
+    "smoothed sour",
+    "smoothed spicy",
+    "smoothed salty",
+
+    "stroked sour",
+    "stroked spicy",
+    "stroked salty"
+]
+
+# --------------------------------------------------
+# TABLE 3
+# Nonpreferred syntax primes
+# --------------------------------------------------
+
+NONPREFERRED = [
+
+    # sight-smell
+
+    "visual aromatic",
+    "watchful aromatic",
+    "scanned aromatic",
+
+    "visual fragrant",
+    "watchful fragrant",
+    "scanned fragrant",
+
+    "visual smelly",
+    "watchful smelly",
+    "scanned smelly",
+
+    # sight-sound
+
+    "visual quiet",
+    "watchful quiet",
+    "scanned quiet",
+
+    "visual silent",
+    "watchful silent",
+    "scanned silent",
+
+    "visual deaf",
+    "watchful deaf",
+    "scanned deaf",
+
+    # sight-taste
+
+    "visual sour",
+    "watchful sour",
+    "scanned sour",
+
+    "visual spicy",
+    "watchful spicy",
+    "scanned spicy",
+
+    "visual salty",
+    "watchful salty",
+    "scanned salty",
+
+    # sight-touch
+
+    "visual rough",
+    "watchful rough",
+    "scanned rough",
+
+    "visual smoothed",
+    "watchful smoothed",
+    "scanned smoothed",
+
+    "visual stroked",
+    "watchful stroked",
+    "scanned stroked",
+
+    # smell-taste
+
+    "aromatic sour",
+    "fragrant sour",
+    "smelly sour",
+
+    "aromatic spicy",
+    "fragrant spicy",
+    "smelly spicy",
+
+    "aromatic salty",
+    "fragrant salty",
+    "smelly salty",
+
+    # smell-touch
+
+    "aromatic rough",
+    "fragrant rough",
+    "smelly rough",
+
+    "aromatic smoothed",
+    "fragrant smoothed",
+    "smelly smoothed",
+
+    "aromatic stroked",
+    "fragrant stroked",
+    "smelly stroked",
+
+    # sound-smell
+
+    "quiet aromatic",
+    "silent aromatic",
+    "deaf aromatic",
+
+    "quiet fragrant",
+    "silent fragrant",
+    "deaf fragrant",
+
+    "quiet smelly",
+    "silent smelly",
+    "deaf smelly",
+
+    # sound-taste
+
+    "quiet sour",
+    "silent sour",
+    "deaf sour",
+
+    "quiet spicy",
+    "silent spicy",
+    "deaf spicy",
+
+    "quiet salty",
+    "silent salty",
+    "deaf salty",
+
+    # sound-touch
+
+    "quiet rough",
+    "silent rough",
+    "deaf rough",
+
+    "quiet smoothed",
+    "silent smoothed",
+    "deaf smoothed",
+
+    "quiet stroked",
+    "silent stroked",
+    "deaf stroked",
+
+    # taste-touch
+
+    "sour rough",
+    "spicy rough",
+    "salty rough",
+
+    "sour smoothed",
+    "spicy smoothed",
+    "salty smoothed",
+
+    "sour stroked",
+    "spicy stroked",
+    "salty stroked"
+]
+
+# --------------------------------------------------
+# CHUNK 3 VALIDATION
+# --------------------------------------------------
+
+if __name__ == "__main__":
+
+    print("Adjectives:", len(ALL_ADJECTIVES))
+    print("Preferred primes:", len(PREFERRED))
+    print("Nonpreferred primes:", len(NONPREFERRED))
+
+    assert len(ALL_ADJECTIVES) == 15
+    assert len(PREFERRED) == 90
+    assert len(NONPREFERRED) == 90
+
+    print("Chunk 3 validation passed.")
+# ==================================================
+# CHUNK 4A
+# TABLE 7 - PATHWAY A
+# ==================================================
+
+PATHWAY_A_ROWS = [
+
+    # --------------------------------------------------
+    # Items 1-45
+    # Nonpreferred syntax + concrete-first nouns
+    # --------------------------------------------------
+
+    ("visual aromatic","edge","opinion"),
+    ("watchful aromatic","edge","attitude"),
+    ("scanned aromatic","edge","consideration"),
+
+    ("visual fragrant","sharpener","opinion"),
+    ("watchful fragrant","sharpener","attitude"),
+    ("scanned fragrant","sharpener","consideration"),
+
+    ("visual smelly","boomerang","opinion"),
+    ("watchful smelly","boomerang","attitude"),
+    ("scanned smelly","boomerang","consideration"),
+
+    ("visual quiet","edge","opinion"),
+    ("watchful quiet","edge","attitude"),
+    ("scanned quiet","edge","consideration"),
+
+    ("visual silent","sharpener","opinion"),
+    ("watchful silent","sharpener","attitude"),
+    ("scanned silent","sharpener","consideration"),
+
+    ("visual deaf","boomerang","opinion"),
+    ("watchful deaf","boomerang","attitude"),
+    ("scanned deaf","boomerang","consideration"),
+
+    ("visual sour","edge","opinion"),
+    ("watchful sour","edge","attitude"),
+    ("scanned sour","edge","consideration"),
+
+    ("visual spicy","sharpener","opinion"),
+    ("watchful spicy","sharpener","attitude"),
+    ("scanned spicy","sharpener","consideration"),
+
+    ("visual salty","boomerang","opinion"),
+    ("watchful salty","boomerang","attitude"),
+    ("scanned salty","boomerang","consideration"),
+
+    ("visual rough","edge","opinion"),
+    ("watchful rough","edge","attitude"),
+    ("scanned rough","edge","consideration"),
+
+    ("visual smoothed","sharpener","opinion"),
+    ("watchful smoothed","sharpener","attitude"),
+    ("scanned smoothed","sharpener","consideration"),
+
+    ("visual stroked","boomerang","opinion"),
+    ("watchful stroked","boomerang","attitude"),
+    ("scanned stroked","boomerang","consideration"),
+
+    ("aromatic sour","edge","opinion"),
+    ("fragrant sour","edge","attitude"),
+    ("smelly sour","edge","consideration"),
+
+    ("aromatic spicy","sharpener","opinion"),
+    ("fragrant spicy","sharpener","attitude"),
+    ("smelly spicy","sharpener","consideration"),
+
+    ("aromatic salty","boomerang","opinion"),
+    ("fragrant salty","boomerang","attitude"),
+    ("smelly salty","boomerang","consideration"),
+
+    # --------------------------------------------------
+    # Items 46-90
+    # Preferred syntax + abstract-first nouns
+    # --------------------------------------------------
+
+    ("rough aromatic","opinion","edge"),
+    ("rough fragrant","opinion","sharpener"),
+    ("rough smelly","opinion","boomerang"),
+
+    ("smoothed aromatic","attitude","edge"),
+    ("smoothed fragrant","attitude","sharpener"),
+    ("smoothed smelly","attitude","boomerang"),
+
+    ("stroked aromatic","consideration","edge"),
+    ("stroked fragrant","consideration","sharpener"),
+    ("stroked smelly","consideration","boomerang"),
+
+    ("aromatic quiet","opinion","edge"),
+    ("aromatic silent","opinion","sharpener"),
+    ("aromatic deaf","opinion","boomerang"),
+
+    ("fragrant quiet","attitude","edge"),
+    ("fragrant silent","attitude","sharpener"),
+    ("fragrant deaf","attitude","boomerang"),
+
+    ("smelly quiet","consideration","edge"),
+    ("smelly silent","consideration","sharpener"),
+    ("smelly deaf","consideration","boomerang"),
+
+    ("sour quiet","opinion","edge"),
+    ("sour silent","opinion","sharpener"),
+    ("sour deaf","opinion","boomerang"),
+
+    ("spicy quiet","attitude","edge"),
+    ("spicy silent","attitude","sharpener"),
+    ("spicy deaf","attitude","boomerang"),
+
+    ("salty quiet","consideration","edge"),
+    ("salty silent","consideration","sharpener"),
+    ("salty deaf","consideration","boomerang"),
+
+    ("rough quiet","opinion","edge"),
+    ("rough silent","opinion","sharpener"),
+    ("rough deaf","opinion","boomerang"),
+
+    ("smoothed quiet","attitude","edge"),
+    ("smoothed silent","attitude","sharpener"),
+    ("smoothed deaf","attitude","boomerang"),
+
+    ("stroked quiet","consideration","edge"),
+    ("stroked silent","consideration","sharpener"),
+    ("stroked deaf","consideration","boomerang"),
+
+    ("rough sour","opinion","edge"),
+    ("rough spicy","opinion","sharpener"),
+    ("rough salty","opinion","boomerang"),
+
+    ("smoothed sour","attitude","edge"),
+    ("smoothed spicy","attitude","sharpener"),
+    ("smoothed salty","attitude","boomerang"),
+
+    ("stroked sour","consideration","edge"),
+    ("stroked spicy","consideration","sharpener"),
+    ("stroked salty","consideration","boomerang")
+]
+# ==================================================
+# CHUNK 4B
+# TABLE 8 - PATHWAY B
+# ==================================================
+
+PATHWAY_B_ROWS = [
+
+    # --------------------------------------------------
+    # Items 1-45
+    # Preferred syntax + concrete-first nouns
+    # --------------------------------------------------
+
+    ("aromatic visual","edge","opinion"),
+    ("aromatic watchful","edge","attitude"),
+    ("aromatic scanned","edge","consideration"),
+
+    ("fragrant visual","sharpener","opinion"),
+    ("fragrant watchful","sharpener","attitude"),
+    ("fragrant scanned","sharpener","consideration"),
+
+    ("smelly visual","boomerang","opinion"),
+    ("smelly watchful","boomerang","attitude"),
+    ("smelly scanned","boomerang","consideration"),
+
+    ("quiet visual","edge","opinion"),
+    ("quiet watchful","edge","attitude"),
+    ("quiet scanned","edge","consideration"),
+
+    ("silent visual","sharpener","opinion"),
+    ("silent watchful","sharpener","attitude"),
+    ("silent scanned","sharpener","consideration"),
+
+    ("deaf visual","boomerang","opinion"),
+    ("deaf watchful","boomerang","attitude"),
+    ("deaf scanned","boomerang","consideration"),
+
+    ("sour visual","edge","opinion"),
+    ("sour watchful","edge","attitude"),
+    ("sour scanned","edge","consideration"),
+
+    ("spicy visual","sharpener","opinion"),
+    ("spicy watchful","sharpener","attitude"),
+    ("spicy scanned","sharpener","consideration"),
+
+    ("salty visual","boomerang","opinion"),
+    ("salty watchful","boomerang","attitude"),
+    ("salty scanned","boomerang","consideration"),
+
+    ("rough visual","edge","opinion"),
+    ("rough watchful","edge","attitude"),
+    ("rough scanned","edge","consideration"),
+
+    ("smoothed visual","sharpener","opinion"),
+    ("smoothed watchful","sharpener","attitude"),
+    ("smoothed scanned","sharpener","consideration"),
+
+    ("stroked visual","boomerang","opinion"),
+    ("stroked watchful","boomerang","attitude"),
+    ("stroked scanned","boomerang","consideration"),
+
+    ("sour aromatic","edge","opinion"),
+    ("sour fragrant","edge","attitude"),
+    ("sour smelly","edge","consideration"),
+
+    ("spicy aromatic","sharpener","opinion"),
+    ("spicy fragrant","sharpener","attitude"),
+    ("spicy smelly","sharpener","consideration"),
+
+    ("salty aromatic","boomerang","opinion"),
+    ("salty fragrant","boomerang","attitude"),
+    ("salty smelly","boomerang","consideration"),
+
+    # --------------------------------------------------
+    # Items 46-90
+    # Nonpreferred syntax + abstract-first nouns
+    # --------------------------------------------------
+
+    ("aromatic rough","opinion","edge"),
+    ("fragrant rough","opinion","sharpener"),
+    ("smelly rough","opinion","boomerang"),
+
+    ("aromatic smoothed","attitude","edge"),
+    ("fragrant smoothed","attitude","sharpener"),
+    ("smelly smoothed","attitude","boomerang"),
+
+    ("aromatic stroked","consideration","edge"),
+    ("fragrant stroked","consideration","sharpener"),
+    ("smelly stroked","consideration","boomerang"),
+
+    ("quiet aromatic","opinion","edge"),
+    ("silent aromatic","opinion","sharpener"),
+    ("deaf aromatic","opinion","boomerang"),
+
+    ("quiet fragrant","attitude","edge"),
+    ("silent fragrant","attitude","sharpener"),
+    ("deaf fragrant","attitude","boomerang"),
+
+    ("quiet smelly","consideration","edge"),
+    ("silent smelly","consideration","sharpener"),
+    ("deaf smelly","consideration","boomerang"),
+
+    ("quiet sour","opinion","edge"),
+    ("silent sour","opinion","sharpener"),
+    ("deaf sour","opinion","boomerang"),
+
+    ("quiet spicy","attitude","edge"),
+    ("silent spicy","attitude","sharpener"),
+    ("deaf spicy","attitude","boomerang"),
+
+    ("quiet salty","consideration","edge"),
+    ("silent salty","consideration","sharpener"),
+    ("deaf salty","consideration","boomerang"),
+
+    ("quiet rough","opinion","edge"),
+    ("silent rough","opinion","sharpener"),
+    ("deaf rough","opinion","boomerang"),
+
+    ("quiet smoothed","attitude","edge"),
+    ("silent smoothed","attitude","sharpener"),
+    ("deaf smoothed","attitude","boomerang"),
+
+    ("quiet stroked","consideration","edge"),
+    ("silent stroked","consideration","sharpener"),
+    ("deaf stroked","consideration","boomerang"),
+
+    ("sour rough","opinion","edge"),
+    ("spicy rough","opinion","sharpener"),
+    ("salty rough","opinion","boomerang"),
+
+    ("sour smoothed","attitude","edge"),
+    ("spicy smoothed","attitude","sharpener"),
+    ("salty smoothed","attitude","boomerang"),
+
+    ("sour stroked","consideration","edge"),
+    ("spicy stroked","consideration","sharpener"),
+    ("salty stroked","consideration","boomerang")
+]
+assert len(PATHWAY_A_ROWS) == 90
+assert len(PATHWAY_B_ROWS) == 90
+
+print("Pathway A:", len(PATHWAY_A_ROWS))
+print("Pathway B:", len(PATHWAY_B_ROWS))
+# ==================================================
+# CHUNK 5
+# PATHWAYS + TRIAL BUILDER + LOGGER + GUI
+# ==================================================
+
+# --------------------------------------------------
+# PATHWAY BUILDERS
+# --------------------------------------------------
+
+def build_pathway_a():
+
+    trials = []
+
+    for idx, (prime, left_noun, right_noun) in enumerate(PATHWAY_A_ROWS):
+
+        trials.append(
+
+            Trial(
+                phase="main",
+                prime=prime,
+              left=left_noun,
+            right=right_noun,
+                pathway="A",
+                prime_type=(
+                    "nonpreferred"
+                    if idx < 45
+                    else "preferred"
+                ),
+                noun_order=(
+                    "concrete_first"
+                    if idx < 45
+                    else "abstract_first"
+                )
+            )
+        )
+
+    return trials
+
+
+def build_pathway_b():
+
+    trials = []
+
+    for idx, (prime, left_noun, right_noun) in enumerate(PATHWAY_B_ROWS):
+
+        trials.append(
+
+            Trial(
+                phase="main",
+               prime=prime,
+            left=left_noun,
+          right=right_noun,
+                pathway="B",
+                prime_type=(
+                    "preferred"
+                    if idx < 45
+                    else "nonpreferred"
+                ),
+                noun_order=(
+                    "concrete_first"
+                    if idx < 45
+                    else "abstract_first"
+                )
+            )
+        )
+
+    return trials
+
+
+# --------------------------------------------------
+# COMPLETE TRIAL SET
+# --------------------------------------------------
+
+def build_trial_set(pathway):
+
+    if pathway == "A":
+
+        practice_source = PRACTICE_A
+        distractor_source = DISTRACTOR_A
+        main_trials = build_pathway_a()
+
+    else:
+
+        practice_source = PRACTICE_B
+        distractor_source = DISTRACTOR_B
+        main_trials = build_pathway_b()
+
+    practice_trials = [
+
+        Trial(
+            phase="practice",
+            prime=prime,
+            left=left_noun,
+            right=right_noun,
+            pathway=pathway,
+            prime_type="practice",
+            noun_order="practice"
+        )
+
+        for prime, left_noun, right_noun
+        in practice_source
+    ]
+
+    distractor_trials = [
+
+        Trial(
+            phase="distractor",
+            prime=prime,
+            left=left_noun,
+            right=right_noun,
+            pathway=pathway,
+            prime_type="distractor",
+            noun_order="distractor"
+        )
+
+        for prime, left_noun, right_noun
+        in distractor_source
+    ]
+
+    random.shuffle(distractor_trials)
+    random.shuffle(main_trials)
+
+    return (
+        practice_trials +
+        distractor_trials +
+        main_trials
+    )
+
+
+# --------------------------------------------------
+# CSV LOGGER
+# --------------------------------------------------
+
+CSV_COLUMNS = [
+
+    "participant",
+    "pathway",
+    "clqt_order",
+
+    "phase",
+    "trial_number",
+
+    "prime",
+
+    "left_noun",
+    "right_noun",
+
+    "choice_side",
+    "chosen_noun",
+
+    "prime_type",
+    "noun_order",
+
+    "rt_ms",
+    "timestamp"
+]
+
+
+class DataLogger:
+
+    def __init__(
+        self,
+        participant,
+        pathway,
+        clqt_order
+    ):
+
+        filename = (
+            f"{participant}_"
+            f"{int(time.time())}.csv"
+        )
+
+        self.path = DATA_DIR / filename
+
+        self.file = open(
+            self.path,
+            "w",
+            newline="",
+            encoding="utf8"
+        )
+
+        self.writer = csv.DictWriter(
+            self.file,
+            fieldnames=CSV_COLUMNS
+        )
+
+        self.writer.writeheader()
+
+        self.participant = participant
+        self.pathway = pathway
+        self.clqt_order = clqt_order
+
+    def write(
+        self,
+        trial,
+        trial_number,
+        choice_side,
+        chosen_noun,
+        rt_ms
+    ):
+
+        self.writer.writerow({
+
+            "participant":
+                self.participant,
+
+            "pathway":
+                self.pathway,
+
+            "clqt_order":
+                self.clqt_order,
+
+            "phase":
+                trial.phase,
+
+            "trial_number":
+                trial_number,
+
+            "prime":
+                trial.prime,
+
+            "left_noun":
+                trial.left,
+
+            "right_noun":
+                trial.right,
+
+            "choice_side":
+                choice_side,
+
+            "chosen_noun":
+                chosen_noun,
+
+            "prime_type":
+                trial.prime_type,
+
+            "noun_order":
+                trial.noun_order,
+
+            "rt_ms":
+                round(rt_ms, 3),
+
+            "timestamp":
+                time.time()
+        })
+
+        self.file.flush()
+
+    def close(self):
+
+        self.file.close()
+
+
+# --------------------------------------------------
+# EXPERIMENT
+# --------------------------------------------------
+
+
+
+# --------------------------------------------------
+# VALIDATION
+# --------------------------------------------------
+
+def validate():
+
+    assert len(PATHWAY_A_ROWS) == 90
+    assert len(PATHWAY_B_ROWS) == 90
+
+    assert len(build_pathway_a()) == 90
+    assert len(build_pathway_b()) == 90
+
+    assert len(build_trial_set("A")) == 120
+    assert len(build_trial_set("B")) == 120
+
+    print("Validation passed")
+
+
+# --------------------------------------------------
+# MAIN
+# --------------------------------------------------
+
+validate()
+
+st.set_page_config(
+    page_title="DOLI Reconstruction",
+    layout="wide"
+)
+
+if "started" not in st.session_state:
+    st.session_state.started = False
+
+if "trial_index" not in st.session_state:
+    st.session_state.trial_index = 0
+
+if "trial_start" not in st.session_state:
+    st.session_state.trial_start = None
+
+if "participant" not in st.session_state:
+    st.session_state.participant = None
+
+if not st.session_state.started:
+
+    st.title("DOLI Reconstruction")
+
+    participant = st.text_input(
+        "Participant ID"
+    )
+
+    if st.button("Start"):
+
+        st.session_state.participant = participant
+
+        st.session_state.pathway = (
+            get_block_assignment(
+                "pathway",
+                ["A", "B"]
+            )
+        )
+
+        st.session_state.clqt_order = (
+            get_block_assignment(
+                "clqt",
+                ["pre", "post"]
+            )
+        )
+
+        st.session_state.trials = (
+            build_trial_set(
+                st.session_state.pathway
+            )
+        )
+
+        st.session_state.logger = (
+            DataLogger(
+                participant,
+                st.session_state.pathway,
+                st.session_state.clqt_order
+            )
+        )
+
+        st.session_state.started = True
+
+        st.rerun()
+
+else:
+
+    trials = st.session_state.trials
+
+    idx = st.session_state.trial_index
+
+    if idx >= len(trials):
+
+        st.success(
+            "Experiment Complete"
+        )
+
+        st.stop()
+
+    trial = trials[idx]
+
+    if st.session_state.trial_start is None:
+
+        st.session_state.trial_start = (
+            time.perf_counter()
+        )
+
+    st.markdown(
+        f"<h1 style='text-align:center'>{trial.prime}</h1>",
+        unsafe_allow_html=True
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        left_clicked = st.button(
+            trial.left,
+            use_container_width=True
+        )
+
+    with col2:
+
+        right_clicked = st.button(
+            trial.right,
+            use_container_width=True
+        )
+
+    if left_clicked or right_clicked:
+
+        rt_ms = (
+            time.perf_counter()
+            - st.session_state.trial_start
+        ) * 1000
+
+        if left_clicked:
+
+            side = "left"
+            chosen = trial.left
+
+        else:
+
+            side = "right"
+            chosen = trial.right
+
+        st.session_state.logger.write(
+            trial,
+            idx + 1,
+            side,
+            chosen,
+            rt_ms
+        )
+
+        st.session_state.trial_index += 1
+
+        st.session_state.trial_start = None
+
+        st.rerun()
