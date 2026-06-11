@@ -1087,14 +1087,17 @@ def build_trial_set(pathway):
         in distractor_source
     ]
 
-    random.shuffle(distractor_trials)
-    random.shuffle(main_trials)
+    combined_trials = (
+    main_trials +
+    distractor_trials
+)
 
-    return (
-        practice_trials +
-        distractor_trials +
-        main_trials
-    )
+random.shuffle(combined_trials)
+
+return (
+    practice_trials +
+    combined_trials
+)
 
 
 # --------------------------------------------------
