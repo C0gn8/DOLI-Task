@@ -1271,7 +1271,7 @@ if "trial_start" not in st.session_state:
 if "participant" not in st.session_state:
     st.session_state.participant = None
 
-    if "show_instructions" not in st.session_state:
+if "show_instructions" not in st.session_state:
     st.session_state.show_instructions = True
 
 if "practice_finished" not in st.session_state:
