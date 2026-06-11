@@ -1,14 +1,22 @@
 # DOLI Task
 
-The DOLI Task is a computerized experimental task designed to investigate metaphoric language processing and cognitive constraint in clinical and non-clinical populations. Further information about the experiment is available on https://www.olidnejad.com
+The DOLI Task is a computerized experimental task designed to investigate metaphoric language processing and cognitive constraint in clinical and non-clinical populations. Further information about the experiment is available at https://www.olidnejad.com.
 
 **Version 5.2** is the latest stable working release and is recommended for all new research use.
 
-Version 3.1. was the initial prototype. It did not allocate stimuli lists correctly.
+## Version History
 
-Version 5.1 corrected the issues of 3.1. and also moved away from a desktop GUI approach using Tkinter to a web-based presentation using Streamlit. It still contained an error, thought to be fixed, where distractor items were front-loaded ahead of main items instead of interleaved into the main item set. 
+### Version 3.1
 
-Version 5.2. is the version recommended for data collection. 
+The initial prototype release. This version contained an error in stimulus list allocation.
+
+### Version 5.1
+
+Corrected the stimulus allocation issues present in Version 3.1 and migrated the task from a Tkinter desktop GUI to a Streamlit web-based interface. This version still contained an error whereby distractor items were presented as a front-loaded block rather than being interleaved with the main stimulus items.
+
+### Version 5.2
+
+Corrects the distractor presentation issue and is the recommended version for data collection.
 
 ## Running the Task
 
@@ -18,11 +26,11 @@ From the project directory, run:
 streamlit run DOLI_V5.2.py
 ```
 
-Or download all files and run the batch file.
+Alternatively, download all files and run the included batch file.
 
 The task will open automatically in your web browser.
 
-Results are saved in .csv format in the /data folder of the GitHub Codespace. Cloning the repository is recommended if you wish to store data on the Codespace.
+Results are saved in CSV format in the `/data` folder. Users intending to collect data are encouraged to clone the repository rather than relying on temporary GitHub Codespaces storage.
 
 ## Licence
 
