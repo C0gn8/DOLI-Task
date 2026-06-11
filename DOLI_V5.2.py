@@ -1271,6 +1271,12 @@ if "trial_start" not in st.session_state:
 if "participant" not in st.session_state:
     st.session_state.participant = None
 
+    if "show_instructions" not in st.session_state:
+    st.session_state.show_instructions = True
+
+if "practice_finished" not in st.session_state:
+    st.session_state.practice_finished = False
+
 if not st.session_state.started:
 
     st.title("DOLI Reconstruction")
@@ -1317,6 +1323,33 @@ if not st.session_state.started:
 
 else:
 
+    # -----------------------------
+    # Instructions Screen
+    # -----------------------------
+
+    if st.session_state.show_instructions:
+
+        st.title("Instructions")
+
+        st.write(
+            """
+            Words will be shown at the top of the screen, along with two choices below.
+
+            Your task is to choose a word that completes the phrase best for you.
+
+            You will be shown some practice items before the experiment starts, so you can get used to the software.
+
+            You will be told when the main experiment starts.
+            """
+        )
+
+        if st.button("Begin Practice"):
+
+            st.session_state.show_instructions = False
+            st.rerun()
+
+        st.stop()
+
     trials = st.session_state.trials
 
     idx = st.session_state.trial_index
@@ -1328,6 +1361,34 @@ else:
         )
 
         st.stop()
+
+    # ----------------------------------
+# Practice Complete Screen
+# ----------------------------------
+
+if (
+    idx == 15
+    and not st.session_state.practice_finished
+):
+
+    st.title("Practice Complete")
+
+    st.write(
+        """
+        You have completed the practice items.
+
+        The experiment will begin on the next screen.
+
+        Proceed when you are ready.
+        """
+    )
+
+    if st.button("Begin Experiment"):
+
+        st.session_state.practice_finished = True
+        st.rerun()
+
+    st.stop()
 
     trial = trials[idx]
 
