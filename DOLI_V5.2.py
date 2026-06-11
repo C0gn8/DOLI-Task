@@ -1363,32 +1363,32 @@ else:
         st.stop()
 
     # ----------------------------------
-# Practice Complete Screen
-# ----------------------------------
+    # Practice Complete Screen
+    # ----------------------------------
 
-if (
-    idx == 15
-    and not st.session_state.practice_finished
-):
+    if (
+        idx == 15
+        and not st.session_state.practice_finished
+    ):
 
-    st.title("Practice Complete")
+        st.title("Practice Complete")
 
-    st.write(
-        """
-        You have completed the practice items.
+        st.write(
+            """
+            You have completed the practice items.
 
-        The experiment will begin on the next screen.
+            The experiment will begin on the next screen.
 
-        Proceed when you are ready.
-        """
-    )
+            Proceed when you are ready.
+            """
+        )
 
-    if st.button("Begin Experiment"):
+        if st.button("Begin Experiment"):
 
-        st.session_state.practice_finished = True
-        st.rerun()
+            st.session_state.practice_finished = True
+            st.rerun()
 
-    st.stop()
+        st.stop()
 
     trial = trials[idx]
 
